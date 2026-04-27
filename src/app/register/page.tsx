@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,6 +21,19 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, username, password }),
+    });
+
+    if (!res.ok) {
+      const { error: msg } = await res.json().catch(() => ({ error: "Registration failed" }));
+      setError(msg || "Registration failed");
+      setLoading(false);
+      return;
+    }
+
     const result = await signIn("credentials", {
       username,
       password,
@@ -27,12 +41,14 @@ export default function LoginPage() {
     });
 
     if (result?.error) {
-      setError("Invalid username or password");
+      setError("Account created. Please log in.");
       setLoading(false);
-    } else {
-      router.push("/");
-      router.refresh();
+      router.push("/login");
+      return;
     }
+
+    router.push("/");
+    router.refresh();
   }
 
   return (
@@ -43,9 +59,9 @@ export default function LoginPage() {
             <span className="text-3xl font-bold text-primary">D</span>
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">DrePark</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Strategic Car Visibility & Networking
+              Join DrePark in seconds
             </p>
           </div>
         </CardHeader>
@@ -54,21 +70,31 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Input
                 type="text"
+                placeholder="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="h-12"
+                autoComplete="name"
+                autoFocus
+                required
+              />
+              <Input
+                type="text"
                 placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="h-12"
                 autoComplete="username"
-                autoFocus
                 required
               />
               <Input
                 type="password"
-                placeholder="Password"
+                placeholder="Password (min. 8 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-12"
-                autoComplete="current-password"
+                autoComplete="new-password"
+                minLength={8}
                 required
               />
               {error && (
@@ -80,14 +106,14 @@ export default function LoginPage() {
             <Button
               type="submit"
               className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-              disabled={loading || !username || !password}
+              disabled={loading || !name || !username || password.length < 8}
             >
-              {loading ? "Unlocking..." : "Unlock"}
+              {loading ? "Creating account..." : "Create account"}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              No account yet?{" "}
-              <Link href="/register" className="text-primary hover:underline">
-                Create one
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Log in
               </Link>
             </p>
           </form>

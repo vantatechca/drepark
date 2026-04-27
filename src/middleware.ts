@@ -1,17 +1,21 @@
 import { auth } from "@/lib/auth";
 
 export default auth((req) => {
+  const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isLoginPage = req.nextUrl.pathname === "/login";
-  const isAuthApi = req.nextUrl.pathname.startsWith("/api/auth");
+  const isLoginPage = pathname === "/login";
+  const isRegisterPage = pathname === "/register";
+  const isPublicPage = isLoginPage || isRegisterPage;
+  const isAuthApi = pathname.startsWith("/api/auth");
+  const isRegisterApi = pathname === "/api/register";
 
-  if (isAuthApi) return;
+  if (isAuthApi || isRegisterApi) return;
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isPublicPage) {
     return Response.redirect(new URL("/login", req.url));
   }
 
-  if (isLoggedIn && isLoginPage) {
+  if (isLoggedIn && isPublicPage) {
     return Response.redirect(new URL("/", req.url));
   }
 });

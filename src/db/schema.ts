@@ -160,6 +160,18 @@ export const recommendationTypeEnum = pgEnum("recommendation_type", [
 ]);
 
 // ============================================================
+// TABLE 0: USERS
+// ============================================================
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  username: varchar("username", { length: 64 }).notNull().unique(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ============================================================
 // TABLE 1: SPOTS
 // ============================================================
 

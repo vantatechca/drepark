@@ -1,37 +1,44 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { compare, hash } from "bcryptjs";
-
-// Single-user auth for DrePark
-const ADMIN_PASSWORD_HASH_PROMISE = hash(
-  process.env.ADMIN_PASSWORD || "drepark2026",
-  12
-);
+import { compare } from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { getDb } from "@/db";
+import { users } from "@/db/schema";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       name: "DrePark",
       credentials: {
+        username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.password) return null;
+        const username = (credentials?.username as string | undefined)?.trim().toLowerCase();
+        const password = credentials?.password as string | undefined;
+        if (!username || !password) return null;
 
-        const adminHash = await ADMIN_PASSWORD_HASH_PROMISE;
-        const valid = await compare(
-          credentials.password as string,
-          adminHash
-        );
+        try {
+          const db = getDb();
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.username, username))
+            .limit(1);
 
-        if (valid) {
+          if (!user) return null;
+
+          const valid = await compare(password, user.passwordHash);
+          if (!valid) return null;
+
           return {
-            id: "1",
-            name: "Andrei",
-            email: "andrei@drepark.app",
+            id: user.id,
+            name: user.name,
+            email: `${user.username}@drepark.app`,
           };
+        } catch {
+          return null;
         }
-        return null;
       },
     }),
   ],
